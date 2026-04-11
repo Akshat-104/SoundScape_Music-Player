@@ -14,7 +14,7 @@ const LandingPage = () => {
         <p className='text-lg text-gray-300 mt-2 text-center'>Start listening to your favourite songs it's just a click away</p>
         <div className='flex justify-around'>
           <button className='cursor-pointer px-6 py-2 bg-zinc-100 p-2 mt-5 rounded-lg font-bold' onClick={()=>{navigate("/signup")}}>Signup</button>
-          <button className='cursor-pointer px-6 py-2 bg-zinc-100 p-2 mt-5 rounded-lg font-bold' onClick={()=>{navigate("login")}}>Login</button>
+          <button className='cursor-pointer px-6 py-2 bg-zinc-100 p-2 mt-5 rounded-lg font-bold' onClick={()=>{navigate("/login")}}>Login</button>
         </div>
       </div>
     </div>

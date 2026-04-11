@@ -28,7 +28,6 @@ export default function Login() {
         // Save token in localStorage
         localStorage.setItem("token", data.token);
         localStorage.setItem("userid" , data.user.id);
-        alert("Login successful!");
         navigate("/dashboard");
       }
     } catch (err) {
