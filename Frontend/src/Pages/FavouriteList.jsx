@@ -1,32 +1,33 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
-import { useState , useEffect } from 'react';
-import "@tailwindplus/elements";
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { ChevronDownIcon } from '@heroicons/react/20/solid'
+import {
+  PlusIcon,
+  MagnifyingGlassIcon,
+  HeartIcon,
+  XMarkIcon,
+  MusicalNoteIcon,
+} from "@heroicons/react/24/solid";
 
 const FavouriteList = () => {
   const [favourites, setFavourites] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-      const fetchPlaylists = async () => {
-        try {
-          const response = await fetch("http://localhost:4444/api/getfavourite");
-          const data = await response.json();
-          setFavourites(data);
-        } catch (err) {
-          console.error("Error fetching playlists:", err);
-        }
-      };
-  
-      fetchPlaylists();
-    }, []);
+    const fetchPlaylists = async () => {
+      const userid = localStorage.getItem("userid");
+      try {
+        const response = await fetch(`http://localhost:4444/api/getfavourite/${userid}`);
+        const data = await response.json();
+        setFavourites(data);
+      } catch (err) {
+        console.error("Error fetching playlists:", err);
+      }
+    };
+    fetchPlaylists();
+  }, []);
 
-    const handleSignOut = async(req,res)=>{
-    await fetch(`http://localhost:4444/api/signout` , {
-      method:"POST"
-    })
+  const handleSignOut = async()=>{
+    await fetch(`http://localhost:4444/api/signout` , { method:"POST" });
     localStorage.removeItem("token");
     localStorage.removeItem("userid");
     localStorage.removeItem("userName");
@@ -34,75 +35,78 @@ const FavouriteList = () => {
   }
 
   return (
-    <div className='bg-neutral-900 min-h-screen flex items-center justify-center'>
-        <div className="relative bg-white max-w-md w-full rounded-xl shadow-lg p-10">
-          <Menu as="div" className="inline-block absolute top-2 right-2">
-      <MenuButton className="inline-flex justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs inset-ring-1 inset-ring-gray-300 hover:bg-gray-50">
-        My Profile
-        <ChevronDownIcon aria-hidden="true" className="-mr-1 size-5 text-gray-400" />
-      </MenuButton>
+    <div className="bg-black min-h-screen flex text-white font-sans text-left">
+      {/* Sidebar */}
+      <aside className="w-64 bg-neutral-950 border-r border-neutral-800 flex flex-col fixed h-full">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+            SoundScape
+          </h1>
+        </div>
+        
+        <nav className="flex-1 px-4 space-y-2">
+          <button onClick={() => navigate("/dashboard")} className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-neutral-400 hover:bg-neutral-900 hover:text-white transition text-left">
+            <MagnifyingGlassIcon className="w-5 h-5" />
+            <span className="font-medium">Search</span>
+          </button>
+          <button onClick={() => navigate("/showplaylist")} className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-neutral-400 hover:bg-neutral-900 hover:text-white transition text-left">
+            <PlusIcon className="w-5 h-5" />
+            <span className="font-medium">Playlists</span>
+          </button>
+          <button onClick={() => navigate("/showFavourites")} className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-neutral-800 text-white text-left">
+            <HeartIcon className="w-5 h-5" />
+            <span className="font-medium">Favourites</span>
+          </button>
+        </nav>
 
-      <MenuItems
-        transition
-        className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg outline-1 outline-black/5 transition data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
-      >
-        <div className="py-1">
-          <MenuItem>
-            <a
-              href="/createplaylist"
-              className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
-            >
-              Create Playlist
-            </a>
-          </MenuItem>
-          <MenuItem>
-            <a
-              href="/dashboard"
-              className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
-            >
-              Dashboard
-            </a>
-          </MenuItem>
-          <MenuItem>
-            <a
-              href="/showplaylist"
-              className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
-            >
-              Show Playlist
-            </a>
-          </MenuItem>
-          <form>
-            <MenuItem>
-              <button
-              onClick={handleSignOut}
-                type="submit"
-                className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
-              >
-                Sign out
-              </button>
-            </MenuItem>
-          </form>
+        <div className="p-4 border-t border-neutral-800">
+          <div className="flex items-center space-x-3 px-4 py-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-600 flex items-center justify-center text-xs font-bold">
+              {localStorage.getItem("username")?.charAt(0) || "U"}
+            </div>
+            <span className="flex-1 truncate text-sm font-medium">{localStorage.getItem("username") || "User"}</span>
+            <button onClick={handleSignOut} title="Sign Out">
+              <XMarkIcon className="w-5 h-5 text-neutral-500 hover:text-white transition" />
+            </button>
+          </div>
         </div>
-      </MenuItems>
-    </Menu>
-        <div>
-          <h2 className="text-center font-bold text-2xl text-black mb-4">
-          MusicPlayer
-        </h2>
-        <h2 className='text-center font-bold text-2xl text-blue-600 mb-4'>Favourites</h2>
-        <ul className="mt-5 space-y-3">
-  {favourites.map((favourite) => (
-    <li
-      key={favourite.id}
-      className="p-3 border rounded-lg hover:bg-gray-100 transition flex justify-between cursor-pointer"
-      onClick={() => navigate(`/favourite/${favourite.id}`)}
-    >
-      {favourite.name}
-    </li>
-  ))}
-</ul>
+      </aside>
+
+      {/* Main Content */}
+      <main className="ml-64 flex-1 p-8">
+        <header className="max-w-5xl mx-auto mb-12">
+          <h2 className="text-4xl font-extrabold tracking-tight mb-2 text-left">Your Favourites</h2>
+          <p className="text-neutral-500 font-medium text-left">All your loved tracks in one place</p>
+        </header>
+
+        <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {favourites.map((favourite) => (
+            <div
+              key={favourite.id}
+              className="group relative bg-neutral-900 border border-neutral-800 p-5 rounded-3xl hover:bg-neutral-800 hover:border-neutral-700 transition-all cursor-pointer shadow-xl text-left"
+              onClick={() => navigate(`/favourite/${favourite.id}`)}
+            >
+              <div className="aspect-square bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl mb-4 flex items-center justify-center relative overflow-hidden text-left">
+                <HeartIcon className="w-16 h-16 text-white/80 group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-bold text-lg truncate mb-1 text-left">{favourite.name}</h3>
+                <p className="text-xs text-neutral-500 font-medium text-left">Your special collection</p>
+              </div>
+            </div>
+          ))}
+
+          {favourites.length === 0 && (
+            <div className="col-span-full py-20 text-center">
+              <div className="w-20 h-20 bg-neutral-900 rounded-full flex items-center justify-center mx-auto mb-6 text-left">
+                <HeartIcon className="w-10 h-10 text-neutral-700" />
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-left">No favourites found</h3>
+              <p className="text-neutral-500 text-left">Start hearting tracks to see them here!</p>
+            </div>
+          )}
         </div>
-      </div>
+      </main>
     </div>
   )
 }

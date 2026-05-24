@@ -1,146 +1,141 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { PlusIcon } from '@heroicons/react/24/solid';
-import "@tailwindplus/elements";
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { ChevronDownIcon } from '@heroicons/react/20/solid'
+import React, { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
+import {
+  PlusIcon,
+  MagnifyingGlassIcon,
+  HeartIcon,
+  XMarkIcon,
+  MusicalNoteIcon,
+} from "@heroicons/react/24/solid";
 
 const CreatePlaylist = () => {
+  const [playlists,setPlaylists] = useState([]);
+  const [message , setMessage] = useState("");
+  const inputRef = useRef(null);
+  const navigate = useNavigate();
 
-    const [playlists,setPlaylists] = useState([]);
-    const [message , setMessage] = useState("");
-    const inputRef = useRef(null);
-    const navigate = useNavigate();
-
-    const handleCreate = async ()=>{
-        const newvalue = inputRef.current.value;
-        const userid = localStorage.getItem("userid");
-        try{
-          const response = await fetch("http://localhost:4444/api/playlist" , {
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body: JSON.stringify({
-              name: newvalue,
-              userId: Number(userid)
-            }),
-          });
-          const create = await response.json();
-          setPlaylists([...playlists , create]);
-        }catch (err) {
-  console.error("Error creating playlist:", err);
-}
+  const handleCreate = async ()=>{
+    const newvalue = inputRef.current.value.trim();
+    if (!newvalue) return;
+    const userid = localStorage.getItem("userid");
+    try{
+      const response = await fetch("http://localhost:4444/api/playlist" , {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          name: newvalue,
+          userId: Number(userid)
+        }),
+      });
+      const create = await response.json();
+      setPlaylists([...playlists , create]);
+      setMessage("Playlist created successfully!");
+      inputRef.current.value = "";
+      setTimeout(() => {
+        navigate("/showplaylist");
+      }, 1500);
+    }catch (err) {
+      console.error("Error creating playlist:", err);
+      setMessage("Error creating playlist. Please try again.");
     }
-    const ShowPlaylist = async () => {
-  try {
-    const response = await fetch("http://localhost:4444/api/getplaylists");
-    const data = await response.json();   // parse JSON
-    console.log(data);
-    setPlaylists(data);                   // set actual array
-  } catch (err) {
-    console.log(err);
   }
-};
 
-  const handleSignOut = async(req,res)=>{
-    await fetch(`http://localhost:4444/api/signout` , {
-      method:"POST"
-    })
+  const handleSignOut = async()=>{
+    await fetch(`http://localhost:4444/api/signout` , { method:"POST" });
     localStorage.removeItem("token");
     localStorage.removeItem("userid");
     localStorage.removeItem("userName");
     navigate("/");
   }
 
-
-
   return (
-    <div className='bg-neutral-900 min-h-screen flex items-center justify-center'>
-        <div className="relative bg-white max-w-md w-full rounded-xl shadow-lg p-10">
-          <Menu as="div" className="inline-block absolute top-2 right-2">
-      <MenuButton className="inline-flex justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs inset-ring-1 inset-ring-gray-300 hover:bg-gray-50">
-        My Profile
-        <ChevronDownIcon aria-hidden="true" className="-mr-1 size-5 text-gray-400" />
-      </MenuButton>
+    <div className="bg-black min-h-screen flex text-white font-sans text-left">
+      {/* Sidebar */}
+      <aside className="w-64 bg-neutral-950 border-r border-neutral-800 flex flex-col fixed h-full text-left">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+            SoundScape
+          </h1>
+        </div>
+        
+        <nav className="flex-1 px-4 space-y-2 text-left">
+          <button onClick={() => navigate("/dashboard")} className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-neutral-400 hover:bg-neutral-900 hover:text-white transition text-left">
+            <MagnifyingGlassIcon className="w-5 h-5" />
+            <span className="font-medium">Search</span>
+          </button>
+          <button onClick={() => navigate("/showplaylist")} className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-neutral-800 text-white text-left">
+            <PlusIcon className="w-5 h-5" />
+            <span className="font-medium">Playlists</span>
+          </button>
+          <button onClick={() => navigate("/showFavourites")} className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-neutral-400 hover:bg-neutral-900 hover:text-white transition text-left">
+            <HeartIcon className="w-5 h-5" />
+            <span className="font-medium">Favourites</span>
+          </button>
+        </nav>
 
-      <MenuItems
-        transition
-        className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg outline-1 outline-black/5 transition data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
-      >
-        <div className="py-1">
-          <MenuItem>
-            <a
-              href="/showplaylist"
-              className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
-            >
-              Show Playlists
-            </a>
-          </MenuItem>
-          <MenuItem>
-            <a
-              href="/dashboard"
-              className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
-            >
-              Dashboard
-            </a>
-          </MenuItem>
-          <MenuItem>
-            <a
-              href="/showFavourites"
-              className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
-            >
-              Favourites
-            </a>
-          </MenuItem>
-          <form>
-            <MenuItem>
+        <div className="p-4 border-t border-neutral-800 text-left">
+          <div className="flex items-center space-x-3 px-4 py-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-600 flex items-center justify-center text-xs font-bold">
+              {localStorage.getItem("username")?.charAt(0) || "U"}
+            </div>
+            <span className="flex-1 truncate text-sm font-medium">{localStorage.getItem("userName") || "User"}</span>
+            <button onClick={handleSignOut} title="Sign Out">
+              <XMarkIcon className="w-5 h-5 text-neutral-500 hover:text-white transition" />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="ml-64 flex-1 p-8 flex items-center justify-center text-left">
+        <div className="max-w-xl w-full text-left">
+          <div className="bg-neutral-900 border border-neutral-800 p-10 rounded-[3rem] shadow-2xl text-left">
+            <div className="w-20 h-20 bg-neutral-800 rounded-3xl flex items-center justify-center mb-8 mx-auto text-left">
+              <MusicalNoteIcon className="w-10 h-10 text-green-500" />
+            </div>
+            
+            <h2 className="text-3xl font-black text-center mb-2 tracking-tight text-left">Create Playlist</h2>
+            <p className="text-neutral-500 text-center mb-10 text-left">Give your new collection a name</p>
+
+            <div className="space-y-6 text-left">
+              <div className="text-left">
+                <label className="text-xs font-bold uppercase tracking-widest text-neutral-500 ml-4 mb-2 block text-left">
+                  Playlist Name
+                </label>
+                <input
+                  type="text"
+                  ref={inputRef}
+                  autoFocus
+                  placeholder="e.g. Chill Vibes 2024"
+                  className="w-full px-6 py-4 bg-black border border-neutral-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all placeholder:text-neutral-700 text-lg text-left"
+                />
+              </div>
+
               <button
-              onClick={handleSignOut}
-                type="submit"
-                className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
+                onClick={handleCreate}
+                className="w-full py-4 bg-white text-black font-black rounded-2xl hover:bg-neutral-200 transition-all active:scale-[0.98] shadow-lg shadow-white/5 text-left"
               >
-                Sign out
+                Create Playlist
               </button>
-            </MenuItem>
-          </form>
-        </div>
-      </MenuItems>
-    </Menu>
-        <div>
-          <h2 className="text-center font-bold text-2xl text-black mb-4">
-          MusicPlayer
-        </h2>
-        </div>
 
-
-        {/* Search Bar */}
-        <div className="w-full mt-4">
-        <div className="flex items-center w-full space-x-2">
-          <input
-    type="text"
-    ref={inputRef}
-    placeholder="Name Of Playlist"
-    className="flex-grow pl-4 py-2 border border-gray-300 rounded-full shadow-sm 
-               focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent 
-               transition duration-200"/>
-          <div className="flex space-x-2">
-    {/* Search Button */}
-    <button
-      onClick={handleCreate}
-      className="flex items-center justify-center px-4 py-2 rounded-full 
-                 bg-green-600 text-white shadow-md 
-                 hover:bg-green-700 transition duration-200 cursor-pointer">
-      Create Playlist
-    </button>
-  </div>
-</div>
-{/* Temporary message */}
-      {message && (
-        <div className="mt-2 px-3 py-1 bg-blue-100 text-blue-700 rounded">
-          {message}
+              {message && (
+                <div className={`mt-4 px-4 py-3 rounded-xl text-center text-sm font-bold ${
+                  message.includes("Error") ? "bg-red-500/10 text-red-500" : "bg-green-500/10 text-green-500"
+                }`}>
+                  {message}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <button 
+            onClick={() => navigate("/showplaylist")}
+            className="mt-8 w-full text-neutral-500 hover:text-white transition font-medium flex items-center justify-center space-x-2 text-left"
+          >
+            <span>Back to Playlists</span>
+          </button>
         </div>
-      )}
-        </div>
-      </div>
+      </main>
     </div>
   )
 }

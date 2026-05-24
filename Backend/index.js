@@ -2,10 +2,9 @@ import jwt from "jsonwebtoken";
 import express from "express";
 import bcrypt from "bcrypt";
 import cors from "cors";
-import { PrismaClient } from "./generated/prisma/client.ts";
+import { PrismaClient } from "./generated/prisma/index.js";
 import dotenv from "dotenv";
 import axios from "axios";
-import { connect } from "node:http2";
 
 dotenv.config();
 const app = express();
@@ -65,7 +64,7 @@ app.post("/api/login", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({ message: "Login successful", token, user: { id: user.id, email: user.email } });
+    res.json({ message: "Login successful", token, user: { id: user.id, email: user.email, username:user.name } });
   } catch (err) {
     res.status(500).json({ error: "Server error", details: err.message });
   }
@@ -78,23 +77,85 @@ app.use("/api/signout" , async(req,res)=>{
 
 // ---------------- SPOTIFY + YOUTUBE ----------------
 
-const SPOTIFY_API_KEY = process.env.SPOTIFY_API_KEY;
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const YOUTUBE_KEY = process.env.YOUTUBE_KEY;
+
+let spotifyAccessToken = null;
+let tokenExpiresAt = 0;
+
+async function getSpotifyAccessToken() {
+  if (spotifyAccessToken && Date.now() < tokenExpiresAt) {
+    return spotifyAccessToken;
+  }
+
+  try {
+    const auth = Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString("base64");
+    const response = await axios.post(
+      "https://accounts.spotify.com/api/token",
+      "grant_type=client_credentials",
+      {
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    spotifyAccessToken = response.data.access_token;
+    tokenExpiresAt = Date.now() + response.data.expires_in * 1000 - 60000; // subtract 1 min for safety
+    return spotifyAccessToken;
+  } catch (err) {
+    console.error("Spotify Auth Error:", err.response?.data || err.message);
+    throw new Error("Failed to authenticate with Spotify");
+  }
+}
 
 // Search Spotify tracks
 app.get("/api/search", async (req, res) => {
   const { q } = req.query;
   try {
-    const response = await axios.get("https://spotify23.p.rapidapi.com/search/", {
-      params: { q, type: "tracks" },
+    const token = await getSpotifyAccessToken();
+    const response = await axios.get("https://api.spotify.com/v1/search", {
+      params: { q, type: "track", limit: 1 },
       headers: {
-        "X-RapidAPI-Key": SPOTIFY_API_KEY,
-        "X-RapidAPI-Host": "spotify23.p.rapidapi.com",
+        Authorization: `Bearer ${token}`,
       },
     });
-    res.json(response.data.tracks.items[0].data);
+
+    const track = response.data.tracks.items[0];
+    if (!track) return res.status(404).json({ message: "No track found" });
+
+    // Mapping to match the frontend's expected "RapidAPI-like" structure
+    const mappedTrack = {
+      name: track.name,
+      uri: track.uri,
+      duration: {
+        totalMilliseconds: track.duration_ms
+      },
+      artists: {
+        items: [
+          {
+            profile: {
+              name: track.artists[0].name
+            }
+          }
+        ]
+      },
+      albumOfTrack: {
+        coverArt: {
+          sources: [
+            {
+              url: track.album.images[0]?.url
+            }
+          ]
+        }
+      }
+    };
+
+    res.json(mappedTrack);
   } catch (err) {
-    console.error(err);
+    console.error("Spotify Search Error:", err.response?.data || err.message);
     res.status(err.response?.status || 500).json({ error: err.message });
   }
 });
@@ -141,10 +202,12 @@ app.delete("/api/deleteplaylist", async(req,res)=>{
   }
 });
 
-// Get all playlists
-app.get("/api/getplaylists", async (req, res) => {
+// Get all playlists for a specific user
+app.get("/api/getplaylists/:userId", async (req, res) => {
+  const { userId } = req.params;
   try {
     const playlists = await prisma.playlists.findMany({
+      where: { userId: Number(userId) },
       include: { tracks: { include: { track: true } } },
     });
     res.json(playlists);
@@ -283,10 +346,12 @@ app.get("/api/specificTrack",async(req,res)=>{
   }
 })
 
-// Get all favourite
-app.get("/api/getfavourite", async (req, res) => {
+// Get all favourite for a specific user
+app.get("/api/getfavourite/:userId", async (req, res) => {
+  const { userId } = req.params;
   try {
     const favourite = await prisma.favourite.findMany({
+      where: { userId: Number(userId) },
       include:{user:{include:{FavouriteTracks:true}}}
     })
     res.json(favourite);
@@ -298,14 +363,15 @@ app.get("/api/getfavourite", async (req, res) => {
 
 // Remove specific Track from Favourites
 app.delete("/api/favourites/:id/track/:trackId",async(req,res)=>{
-  const {Favouriteid , trackId} = req.params;
+  const {id , trackId} = req.params;
   try{
     await prisma.favouriteTrack.delete({
-      where:{trackId:Number(trackId) , Favouriteid:Favouriteid}
+      where:{trackId:Number(trackId)}
     });
     res.json("Deleted The Track");
   }catch(err){
     console.log(err);
+    res.status(500).json({error: err.message});
   }
 });
 

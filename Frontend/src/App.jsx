@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import SignUp from "./Pages/SignUp";
 import Login from "./Pages/Login";
 import LandingPage from "./Pages/LandingPage";
@@ -9,6 +9,18 @@ import PlaylistPage from "./Pages/PlaylistPage";
 import FavouriteList from "./Pages/FavouriteList";
 import Favourites from "./Pages/Favourites";
 
+const ProtectedRoute = () => {
+  const token = localStorage.getItem("token");
+  
+  // If there is no token, redirect to landing/login
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
+
+  // If there is a token, render the child routes
+  return <Outlet />;
+};
+
 function App() {
   const token = localStorage.getItem("token");
   return (
@@ -17,12 +29,14 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login/>}/>
         <Route path="/" element={<LandingPage/>}/>
-        <Route path="/dashboard" element={token ? <DashBoard/> : <Navigate to={"/"}/>}/>
-        <Route path="/createplaylist" element={token ? <CreatePlaylist/> : <Navigate to={"/"}/>}/>
-        <Route path="/showplaylist" element={token ? <ShowPlaylist/> : <Navigate to={"/"}/>}/>
-        <Route path="/playlist/:id" element={token ? <PlaylistPage/> : <Navigate to={"/"}/>}/>
-        <Route path="/showFavourites" element={token ? <FavouriteList/> : <Navigate to={"/"}/>}/>
-        <Route path="/favourite/:id" element={token ? <Favourites/> : <Navigate to={"/"}/>}/>
+        <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<DashBoard/>}/>
+        <Route path="/createplaylist" element={<CreatePlaylist/>}/>
+        <Route path="/showplaylist" element={<ShowPlaylist/>}/>
+        <Route path="/playlist/:id" element={<PlaylistPage/>}/>
+        <Route path="/showFavourites" element={<FavouriteList/>}/>
+        <Route path="/favourite/:id" element={<Favourites/>}/>
+        </Route>
       </Routes>
     </Router>
   );

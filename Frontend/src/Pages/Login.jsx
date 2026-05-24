@@ -21,6 +21,7 @@ export default function Login() {
       });
 
       const data = await res.json();
+      // console.log(data);
 
       if (!res.ok) {
         setError(data.error || "Login failed");
@@ -28,6 +29,7 @@ export default function Login() {
         // Save token in localStorage
         localStorage.setItem("token", data.token);
         localStorage.setItem("userid" , data.user.id);
+        localStorage.setItem("username",data.user.username);
         navigate("/dashboard");
       }
     } catch (err) {

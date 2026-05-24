@@ -226,10 +226,12 @@ const handleStateChange = (event)=>{
   // Open popup with selected track
   const openPopup = async (videoId , url) => {
     console.log(results);
-    const favdata = await fetch(`http://localhost:4444/api/getfavourite`);
-    const getidfromfav = await favdata.json();
     const userid = localStorage.getItem("userid")
-    const getfavdata = getidfromfav.find((pt)=>pt.userId === Number(userid));
+    const favdata = await fetch(`http://localhost:4444/api/getfavourite/${userid}`);
+    const getfavlist = await favdata.json();
+    const getfavdata = getfavlist[0];
+    if (!getfavdata) return;
+
     const Favid = getfavdata.id;
       const getData = await fetch(`http://localhost:4444/api/favourite/${Favid}`)
       const FavData = await getData.json();
@@ -390,291 +392,218 @@ const skipPrevious = () => {
   }
 
   return (
-    <div className="bg-neutral-900 min-h-screen flex justify-center items-center">
-      {/* Main card */}
-      <div className="relative bg-white max-w-md w-full rounded-xl shadow-lg p-10">
-          <Menu as="div" className="inline-block absolute top-2 right-2">
-      <MenuButton className="inline-flex justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs inset-ring-1 inset-ring-gray-300 hover:bg-gray-50">
-        My Profile
-        <ChevronDownIcon aria-hidden="true" className="-mr-1 size-5 text-gray-400" />
-      </MenuButton>
+    <div className="bg-black min-h-screen flex text-white font-sans">
+      {/* Sidebar */}
+      <aside className="w-64 bg-neutral-950 border-r border-neutral-800 flex flex-col fixed h-full">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+            SoundScape
+          </h1>
+        </div>
+        
+        <nav className="flex-1 px-4 space-y-2">
+          <button onClick={() => navigate("/dashboard")} className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-neutral-800 text-white">
+            <MagnifyingGlassIcon className="w-5 h-5" />
+            <span className="font-medium">Search</span>
+          </button>
+          <button onClick={() => navigate("/showplaylist")} className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-neutral-400 hover:bg-neutral-900 hover:text-white transition">
+            <PlusIcon className="w-5 h-5" />
+            <span className="font-medium">Playlists</span>
+          </button>
+          <button onClick={() => navigate("/showFavourites")} className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-neutral-400 hover:bg-neutral-900 hover:text-white transition">
+            <HeartIcon className="w-5 h-5" />
+            <span className="font-medium">Favourites</span>
+          </button>
+        </nav>
 
-      <MenuItems
-        transition
-        className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg outline-1 outline-black/5 transition data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
-      >
-        <div className="py-1">
-          <MenuItem>
-            <a
-              href="/createplaylist"
-              className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
+        <div className="p-4 border-t border-neutral-800">
+          <div className="flex items-center space-x-3 px-4 py-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-600 flex items-center justify-center text-xs font-bold">
+              {localStorage.getItem("username")?.charAt(0) || "U"}
+            </div>
+            <span className="flex-1 truncate text-sm font-medium">{localStorage.getItem("username") || "User"}</span>
+            <button onClick={handleSignOut} title="Sign Out">
+              <XMarkIcon className="w-5 h-5 text-neutral-500 hover:text-white transition" />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="ml-64 flex-1 p-8 pb-32">
+        <header className="max-w-4xl mx-auto mb-12">
+          <h2 className="text-4xl font-extrabold mb-8 tracking-tight">Explore Music</h2>
+          <div className="relative group">
+            <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-neutral-500 group-focus-within:text-green-500 transition-colors" />
+            <input
+              type="text"
+              ref={inputRef}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="What do you want to listen to?"
+              className="w-full pl-14 pr-32 py-5 bg-neutral-900 border border-neutral-800 rounded-2xl text-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all placeholder:text-neutral-600"
+            />
+            <button
+              onClick={handleSearch}
+              disabled={loading}
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-green-500 hover:bg-green-400 disabled:bg-neutral-700 text-black font-bold px-6 py-2.5 rounded-xl transition-all"
             >
-              Create Playlist
-            </a>
-          </MenuItem>
-          <MenuItem>
-            <a
-              href="/showplaylist"
-              className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
-            >
-              Show Playlist
-            </a>
-          </MenuItem>
-          <MenuItem>
-            <a
-              href="/showFavourites"
-              className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
-            >
-              Favourites
-            </a>
-          </MenuItem>
-          <form>
-            <MenuItem>
-              <button
-              onClick={handleSignOut}
-                type="submit"
-                className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-focus:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
+              {loading ? "Searching..." : "Search"}
+            </button>
+          </div>
+        </header>
+
+        <div className="max-w-4xl mx-auto">
+          {/* Results Grid */}
+          {results?.videoId ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div 
+                onClick={() => openPopup(results.videoId , results.videoUrl)}
+                className="group relative bg-neutral-900/50 border border-neutral-800 p-6 rounded-3xl cursor-pointer hover:bg-neutral-800 hover:border-neutral-700 transition-all"
               >
-                Sign out
+                <div className="flex items-center space-x-6">
+                  {activeSnippet?.albumOfTrack?.coverArt?.sources?.[0]?.url && (
+                    <div className="relative overflow-hidden rounded-2xl shadow-2xl w-32 h-32 flex-shrink-0">
+                      <img
+                        src={activeSnippet.albumOfTrack.coverArt.sources[0].url}
+                        alt="cover"
+                        className={`w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-110`}
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <PlayIcon className="w-12 h-12 text-white" />
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-2xl font-bold truncate mb-1">{activeSnippet?.name}</h3>
+                    <p className="text-neutral-400 font-medium truncate">
+                      {activeSnippet?.artists?.items?.[0]?.profile?.name}
+                    </p>
+                    <div className="mt-4 flex items-center space-x-3 text-sm text-neutral-500">
+                      <span className="px-2 py-0.5 bg-neutral-800 rounded">Spotify Meta</span>
+                      <span>•</span>
+                      <span>YouTube Stream</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : !loading && inputRef.current?.value && (
+            <div className="text-center py-20">
+              <p className="text-neutral-500 text-lg italic">Search for your favorite tracks to start listening</p>
+            </div>
+          )}
+
+          {results?.videoId && (
+            <div className="mt-12 flex justify-center">
+               <button 
+                  className="text-neutral-500 hover:text-white transition flex items-center space-x-2" 
+                  onClick={handleClear}
+                >
+                  <ArrowPathRoundedSquareIcon className="w-5 h-5" />
+                  <span>Clear results</span>
+                </button>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Floating Bottom Player (Modified Popup) */}
+      {showPopup && activeVideo && activeSnippet && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 p-6 pointer-events-none">
+          <div className="max-w-5xl mx-auto bg-neutral-900/90 backdrop-blur-xl border border-neutral-800 rounded-3xl shadow-[0_-20px_50px_rgba(0,0,0,0.5)] p-4 flex items-center pointer-events-auto">
+            {/* Player Info */}
+            <div className="flex items-center space-x-4 w-1/3">
+              {activeSnippet?.albumOfTrack?.coverArt?.sources?.[0]?.url && (
+                <img
+                  src={activeSnippet.albumOfTrack.coverArt.sources[0].url}
+                  alt="cover"
+                  className="w-16 h-16 rounded-xl shadow-lg flex-shrink-0 object-cover"
+                />
+              )}
+              <div className="min-w-0">
+                <h4 className="font-bold truncate text-white">{activeSnippet?.name}</h4>
+                <p className="text-xs text-neutral-400 truncate">
+                  {activeSnippet?.artists?.items?.[0]?.profile?.name}
+                </p>
+              </div>
+              <button
+                onClick={handleToggle}
+                className={`transition-colors flex-shrink-0 ml-2 ${idCheck ? "text-red-500" : "text-neutral-500 hover:text-white"}`}
+              >
+                <HeartIcon className="w-6 h-6" />
               </button>
-            </MenuItem>
-          </form>
-        </div>
-      </MenuItems>
-    </Menu>
-        <div>
-          <h2 className="text-center font-bold text-2xl text-black mb-4">
-          MusicPlayer
-        </h2>
-        </div>
+            </div>
 
-        {/* Search Bar */}
-        <div className="w-full mt-4">
-        <div className="flex items-center w-full space-x-2">
-          <input
-    type="text"
-    ref={inputRef}
-    placeholder="Search Song..."
-    className="flex-grow pl-4 py-2 border border-gray-300 rounded-full shadow-sm 
-               focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent 
-               transition duration-200"
-  />
-          <div className="flex space-x-2">
-    {/* Search Button */}
-    <button
-      onClick={handleSearch}
-      className="flex items-center justify-center px-4 py-2 rounded-full 
-                 bg-green-600 text-white shadow-md 
-                 hover:bg-green-700 transition duration-200"
-      title="Search"
-    >
-      <MagnifyingGlassIcon className="w-5 h-5 mr-1" />
-      Search
-    </button>
-  </div>
-</div>
-{/* Loading indicator */}
-{loading && (
-  <p className="mt-2 text-sm text-gray-500 animate-pulse">Loading...</p>
-)}
+            {/* Hidden YT */}
+            <div id="yt-player" className="absolute opacity-0 pointer-events-none w-0 h-0"></div>
 
-{/* Search Results */}
-{results && Array.isArray(results) && results.length > 0 && (
-  <div className="mt-6">
-    <h3 className="text-lg font-semibold text-gray-800 mb-3">Search Results</h3>
-    <ul className="space-y-3">
-      {results.map((videoId, index) => (
-        <li
-          key={index}
-          className="flex items-center justify-between p-3 rounded-lg bg-gray-100 hover:bg-gray-200 transition"
-        >
-          {/* Show videoId or Spotify metadata */}
-          <div>
-            <p className="font-medium text-gray-900">Video ID: {videoId}</p>
-            <p className="text-sm text-gray-500">
-              {activeSnippet?.title || "Unknown Title"} – {activeSnippet?.artists?.items[0]?.profile?.name || "Unknown Artist"}
-            </p>
+            {/* Controls */}
+            <div className="flex-1 flex flex-col items-center px-4">
+              <div className="flex items-center space-x-6 mb-2">
+                <button
+                  onClick={() => setIsLooping(!isLooping)}
+                  className={`transition-colors ${isLooping ? "text-green-500" : "text-neutral-500 hover:text-white"}`}
+                >
+                  <ArrowPathRoundedSquareIcon className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={skipPrevious} 
+                  disabled={currentIndex === null || currentIndex <= 0}
+                  className="text-white disabled:text-neutral-700 transition"
+                >
+                  <BackwardIcon className="w-7 h-7" />
+                </button>
+                <button
+                  onClick={togglePlayPause}
+                  className="w-12 h-12 flex items-center justify-center rounded-full bg-white text-black hover:scale-105 transition active:scale-95"
+                >
+                  {isPlaying ? <PauseIcon className="w-7 h-7" /> : <PlayIcon className="w-7 h-7 ml-1" />}
+                </button>
+                <button 
+                  onClick={skipNext}
+                  disabled={dashboardSkipControl === false}
+                  className="text-white disabled:text-neutral-700 transition"
+                >
+                  <ForwardIcon className="w-7 h-7" />
+                </button>
+                <button
+                  onClick={closePopup}
+                  className="text-neutral-500 hover:text-white transition"
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Progress */}
+              <div className="w-full flex items-center space-x-3 max-w-xl">
+                <span className="text-[10px] text-neutral-500 font-mono w-8 text-right">{formatTime(time)}</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={progress}
+                  onChange={handleSeek}
+                  className="flex-1 accent-green-500 h-1 bg-neutral-700 rounded-full appearance-none cursor-pointer"
+                />
+                <span className="text-[10px] text-neutral-500 font-mono w-8">{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            {/* Volume */}
+            <div className="w-1/3 flex items-center justify-end space-x-3 px-4">
+              <SpeakerWaveIcon className="w-5 h-5 text-neutral-500" />
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={volume}
+                onChange={handleVolume}
+                className="w-24 accent-white h-1 bg-neutral-700 rounded-full appearance-none cursor-pointer"
+              />
+            </div>
           </div>
-        </li>
-      ))}
-    </ul>
-  </div>
-)}
         </div>
-        <div className="p-4">
-    </div>
-
-        {/* Results */}
-<ul className="mt-5 space-y-3">
-  {results?.videoId && (
-    <li
-      key={results.videoId}
-      className="p-3 border rounded-lg cursor-pointer hover:bg-gray-100 transition"
-      onClick={() => openPopup(results.videoId , results.videoUrl)}
-    >
-      <div className="flex">
-        {activeSnippet?.albumOfTrack?.coverArt?.sources?.[0]?.url && (
-          <img
-            src={activeSnippet.albumOfTrack.coverArt.sources[0].url}
-            alt="cover"
-            className={`rounded-xs mb-4 shadow-lg w-20 h-20 mr-5 object-cover ${
-              isPlaying ? "animate-spin-slow" : ""
-            }`}
-          />
-        )}
-        <p className="font-bold text-lg text-center max-w-[90%] truncate">
-          {activeSnippet?.name ?? ""}
-        </p>
-      </div>
-    </li>
-  )}
-</ul>
-          <div className="flex justify-center items-center">
-            {results.length > 0 && (
-              <button className="px-6 py-2 rounded-lg text-white bg-blue-600 shadow hover:bg-blue-700 transition mt-5" onClick={handleClear}>Clear Results</button>
-            )}
-          </div>
-      </div>
-
-{/* Popup Modal */}
-{showPopup && activeVideo && activeSnippet && (
-  <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
-    <div className="bg-neutral-800 bg-opacity-80 backdrop-blur-md rounded-2xl shadow-2xl p-6 w-[420px] relative text-white">
-      
-      {/* Close button */}
-      <button
-        onClick={closePopup}
-        className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center 
-                   rounded-full bg-gray-700 hover:bg-gray-600 text-white transition"
-        title="Close"
-      >
-        <XMarkIcon className="w-5 h-5" />
-      </button>
-
-      {/* Hidden YouTube Player container */}
-      <div id="yt-player" className="w-0 h-0 opacity-0"></div>
-
-      {/* Album art + info */}
-      <div className="flex flex-col items-center">
-        {activeSnippet?.albumOfTrack?.coverArt?.sources?.[0]?.url && (
-          <img
-            src={activeSnippet.albumOfTrack.coverArt.sources[0].url}
-            alt="cover"
-            className={`rounded-xl mb-4 shadow-lg w-52 h-52 object-cover ${
-              isPlaying ? "animate-spin-slow" : ""
-            }`}
-          />
-        )}
-
-        {/* Title neatly centered */}
-        <div className="w-full flex justify-center mb-1">
-          <p className="font-bold text-lg text-center max-w-[90%] truncate">
-            {activeSnippet?.name ?? ""}
-          </p>
-        </div>
-
-        <p className="text-sm text-gray-300 mb-4 text-center">
-          {activeSnippet?.artists?.items?.[0]?.profile?.name ?? ""}
-        </p>
-
-        {/* Controls row */}
-        <div className="flex items-center justify-center space-x-6 mb-3">
-          {/* Repeat */}
-          <button
-            onClick={() => setIsLooping(!isLooping)}
-            className="w-10 h-10 flex items-center justify-center rounded-full shadow-lg transition cursor-pointer"
-            title="Repeat"
-          >
-            {isLooping ? (
-              <ArrowPathRoundedSquareIcon className="h-6 w-6 text-blue-500" />
-            ) : (
-              <ArrowPathIcon className="h-6 w-6 text-gray-500" />
-            )}
-          </button>
-
-          {/* Backward */}
-          <button
-            onClick={skipPrevious}
-            disabled={currentIndex === null || currentIndex <= 0}
-            className={`w-12 h-12 flex items-center justify-center rounded-full shadow-lg transition ${
-              currentIndex > 0
-                ? "bg-gray-700 hover:bg-gray-600 text-white"
-                : "bg-gray-800 text-gray-500 cursor-not-allowed"
-            }`}
-          >
-            <BackwardIcon className="w-6 h-6" />
-          </button>
-
-          {/* Play/Pause */}
-          <button
-            onClick={togglePlayPause}
-            className={`w-16 h-16 flex items-center justify-center rounded-full shadow-lg transition 
-              ${isPlaying ? "bg-green-500 hover:bg-green-600" : "bg-gray-700 hover:bg-gray-600"} text-white`}
-          >
-            {isPlaying ? (
-              <PauseIcon className="w-8 h-8" />
-            ) : (
-              <PlayIcon className="w-8 h-8 ml-1" />
-            )}
-          </button>
-
-          {/* Forward */}
-          <button
-            onClick={skipNext}
-            disabled={dashboardSkipControl === false}
-            className={`w-12 h-12 flex items-center justify-center rounded-full shadow-lg transition ${
-              dashboardSkipControl !== false
-                ? "bg-gray-700 hover:bg-gray-600 text-white"
-                : "bg-gray-800 text-gray-500 cursor-not-allowed"
-            }`}
-          >
-            <ForwardIcon className="w-6 h-6" />
-          </button>
-
-         {/* Favourite */}
-                             <button
-                               onClick={handleToggle}
-                               className={`w-10 h-10 flex items-center justify-center rounded-full shadow-lg transition ${
-                                 idCheck
-                                   ? "bg-red-500 text-white"
-                                   : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                               }`}
-                               title="Add to Favourites"
-                             >
-                               <HeartIcon className="w-5 h-5" />
-                             </button>
-        </div>
-
-        {/* Progress bar */}
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={progress}
-          onChange={handleSeek}
-          className="w-full accent-green-500 mb-2"
-        />
-        <p className="text-xs text-gray-400 mb-4 w-full flex justify-between">
-          <span>{formatTime(time)}</span>
-          <span>{formatTime(duration)}</span>
-        </p>
-
-        {/* Volume control */}
-        <div className="w-full flex items-center space-x-3">
-          <SpeakerWaveIcon className="w-5 h-5 text-gray-300" />
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={volume}
-            onChange={handleVolume}
-            className="flex-1 accent-green-500"
-          />
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 };
