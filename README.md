@@ -1,4 +1,4 @@
-# MusicPlayer 🎵
+# SoundScape - Music Player 🎵
 
 A full-stack music management application that allows users to search for tracks using Spotify metadata, fetch playback links via YouTube, and manage their personal playlists and favorites.
 
